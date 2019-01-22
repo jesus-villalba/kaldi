@@ -806,7 +806,11 @@ BaseFloat DiagGmm::GaussianSelection(const MatrixBase<BaseFloat> &data,
 
   int32 max_mem = 10000000; // Don't devote more than 10Mb to loglikes_mat;
                             // break up the utterance if needed.
-  int32 mem_needed = num_frames * num_gauss * sizeof(BaseFloat);
+  // If the number of frames is larger than max_num_frames_int32, the var mem_needed will overflow
+  // This is a dirty fix.
+  int32 max_num_frames_int32 = (2147483640 - max_mem)/(num_gauss * sizeof(BaseFloat));
+  int32 mem_needed = std::min(max_num_frames_int32,num_frames) * num_gauss * sizeof(BaseFloat);
+  // int32 mem_needed = num_frames * num_gauss * sizeof(BaseFloat);
   if (mem_needed > max_mem) {
     // Break into parts and recurse, we don't want to consume too
     // much memory.
